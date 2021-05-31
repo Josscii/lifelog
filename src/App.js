@@ -1,10 +1,11 @@
 import { useState } from "react";
 import "./App.css";
 import Login from "./Login";
+import LogList from "./LogList";
 
 function App() {
-  const [login] = useState(false);
-  return login ? <div>人生日志</div> : <Login />;
+  const [login] = useState(true);
+  return login ? <LogList /> : <Login />;
 }
 
 export default App;
