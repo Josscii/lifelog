@@ -1,7 +1,7 @@
-import React from "react";
+import React, { useEffect } from "react";
 import githubIcon from "./GitHub.png";
 import { useAuth } from "./useAuth";
-import { useLocation } from "react-router-dom";
+import { useLocation, useHistory } from "react-router-dom";
 
 function useQuery() {
   return new URLSearchParams(useLocation().search);
@@ -10,10 +10,24 @@ function useQuery() {
 function Login(props) {
   const auth = useAuth();
   const query = useQuery();
-
   const code = query.get("code");
+  const history = useHistory();
+
+  useEffect(() => {
+    if (auth.user) {
+      history.push("/");
+    } else if (code) {
+      auth.login(code, (success) => {
+        if (success) {
+          history.push("/");
+        } else {
+          history.push("/login");
+        }
+      });
+    }
+  }, []);
+
   if (code) {
-    auth.login(code);
     return <div>登录中...</div>;
   }
 

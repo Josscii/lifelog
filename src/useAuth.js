@@ -1,4 +1,5 @@
 import React, { useContext, createContext, useState } from "react";
+import useLocalStorage from "./useLocalStorage";
 
 const CLIENT_ID = "f347cec957e100780afc";
 const CLIENT_SECRET = "78e82ef5b2ac3bd94b757e1e8eafc872765a8626";
@@ -16,29 +17,42 @@ function useAuth() {
 }
 
 function useProvideAuth() {
-  const [user, setUser] = useState(null);
+  const [accessToken, setAccessToken] = useLocalStorage("access_token", null);
+  const [user, setUser] = useLocalStorage("user", null);
 
   const requestIdentity = () => {
-    window.location.href = `https://github.com/login/oauth/authorize?scope=user&client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}`;
+    window.location.href = `https://github.com/login/oauth/authorize?scope=repo,user&client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}`;
   };
 
-  const login = (code) => {
-    const data = new FormData();
-    data.append("client_id", CLIENT_ID);
-    data.append("client_secret", CLIENT_SECRET);
-    data.append("code", code);
-    data.append("redirect_uri", REDIRECT_URI);
+  const login = (code, completion) => {
+    let localAccessToken = null;
+    let localUser = null;
 
     fetch("/auth/login/oauth/access_token", {
       method: "POST",
-      body: data,
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        client_id: CLIENT_ID,
+        client_secret: CLIENT_SECRET,
+        code,
+        redirect_uri: REDIRECT_URI,
+      }),
     })
       .then((response) => response.text())
       .then((paramsString) => {
-        let params = new URLSearchParams(paramsString);
+        const params = new URLSearchParams(paramsString);
         const access_token = params.get("access_token");
 
-        // Request to return data of a user that has been authenticated
+        if (access_token == null) {
+          throw new Error("fetch access_token failed");
+        }
+
+        setAccessToken(access_token);
+
+        localAccessToken = access_token;
+
         return fetch(`/api/user`, {
           headers: {
             Authorization: `token ${access_token}`,
@@ -46,11 +60,46 @@ function useProvideAuth() {
         });
       })
       .then((response) => response.json())
-      .then((data) => console.log(data))
-      .catch((error) => console.log(error));
+      .then((data) => {
+        setUser(data);
+        localUser = data;
+
+        return fetch(`/api/repos/${data.login}/lifelog-${data.login}`, {
+          headers: {
+            Accept: `application/vnd.github.v3+json`,
+          },
+        });
+      })
+      .then((response) => {
+        if (response.status === 200) {
+          completion(true);
+          return;
+        }
+
+        return fetch(`/api/user/repos`, {
+          method: "POST",
+          headers: {
+            Accept: `application/vnd.github.v3+json`,
+            Authorization: `token ${localAccessToken}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            name: `${localUser.login}-${localAccessToken}`,
+          }),
+        });
+      })
+      .then((response) => response.json())
+      .then(() => {
+        completion(true);
+      })
+      .catch((error) => {
+        console.log(error);
+        completion(false);
+      });
   };
 
   return {
+    accessToken,
     user,
     requestIdentity,
     login,
