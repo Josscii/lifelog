@@ -1,9 +1,8 @@
 import React, { useContext, createContext, useState } from "react";
-import { useHistory, useLocation } from "react-router-dom";
 
 const CLIENT_ID = "f347cec957e100780afc";
 const CLIENT_SECRET = "78e82ef5b2ac3bd94b757e1e8eafc872765a8626";
-const REDIRECT_URI = "http://localhost:3000/login";
+const REDIRECT_URI = "http://localhost:4200/login";
 
 const authContext = createContext();
 
@@ -29,7 +28,8 @@ function useProvideAuth() {
     data.append("client_secret", CLIENT_SECRET);
     data.append("code", code);
     data.append("redirect_uri", REDIRECT_URI);
-    fetch(`/auth/login/oauth/access_token`, {
+
+    fetch("/auth/login/oauth/access_token", {
       method: "POST",
       body: data,
     })
@@ -46,9 +46,8 @@ function useProvideAuth() {
         });
       })
       .then((response) => response.json())
-      .then((data) => {
-        console.log(data);
-      });
+      .then((data) => console.log(data))
+      .catch((error) => console.log(error));
   };
 
   return {
