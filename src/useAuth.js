@@ -84,7 +84,7 @@ function useProvideAuth() {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            name: `${localUser.login}-${localAccessToken}`,
+            name: `lifelog-${localUser.login}`,
           }),
         });
       })
