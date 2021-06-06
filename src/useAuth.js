@@ -1,4 +1,4 @@
-import React, { useContext, createContext, useState } from "react";
+import React, { useContext, createContext } from "react";
 import useLocalStorage from "./useLocalStorage";
 
 const CLIENT_ID = "f347cec957e100780afc";
@@ -19,6 +19,7 @@ function useAuth() {
 function useProvideAuth() {
   const [accessToken, setAccessToken] = useLocalStorage("access_token", null);
   const [user, setUser] = useLocalStorage("user", null);
+  const [repo, setRepo] = useLocalStorage("repo", null);
 
   const requestIdentity = () => {
     window.location.href = `https://github.com/login/oauth/authorize?scope=repo,user&client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}`;
@@ -72,7 +73,10 @@ function useProvideAuth() {
       })
       .then((response) => {
         if (response.status === 200) {
-          completion(true);
+          response.json().then((data) => {
+            setRepo(data);
+            completion(true);
+          });
           return;
         }
 
@@ -86,11 +90,12 @@ function useProvideAuth() {
           body: JSON.stringify({
             name: `lifelog-${localUser.login}`,
           }),
-        });
-      })
-      .then((response) => response.json())
-      .then(() => {
-        completion(true);
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            setRepo(data);
+            completion(true);
+          });
       })
       .catch((error) => {
         console.log(error);
@@ -101,6 +106,7 @@ function useProvideAuth() {
   return {
     accessToken,
     user,
+    repo,
     requestIdentity,
     login,
   };

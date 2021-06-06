@@ -17,9 +17,9 @@ function Login(props) {
     if (auth.user) {
       history.push("/");
     } else if (code) {
-      auth.login(code, (success) => {
-        if (success) {
-          history.push("/");
+      auth.login(code, (repo) => {
+        if (repo) {
+          history.push("/", repo);
         } else {
           history.push("/login");
         }

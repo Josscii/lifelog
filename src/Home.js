@@ -3,13 +3,12 @@ import LogEditor from "./LogEditor";
 import LogList from "./LogList";
 import { useAuth } from "./useAuth";
 
-function Home() {
+function Home(props) {
   const [newIssue, setNewIssue] = useState(null);
   const auth = useAuth();
 
   const logSuccess = (data) => {
     setNewIssue(data);
-    setNewIssue(null);
   };
 
   return (
